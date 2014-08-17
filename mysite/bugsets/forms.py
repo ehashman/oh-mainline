@@ -47,6 +47,14 @@ class BugsForm(django.forms.Form):
 
     @staticmethod
     def is_valid_url(x):
+        """
+        Check URL validity, returning 'True' for valid and 'False' for invalid.
+
+        This is a wrapper around the django URLValidator to convert the
+        exceptions thrown into 'False' for an exception and 'True' for success.
+        This is necessary in order to use the functionality of URLValidator,
+        but as an argument for the first-order function 'all'.
+        """
         u = URLValidator()
 
         try:
@@ -85,7 +93,7 @@ class BugsForm(django.forms.Form):
         # Turn the list into a set to filter out duplicates
         buglist = set(BugsForm.url_list_from_bugtext(bugtext))
 
-        if not all([BugsForm.is_valid_url(url) for url in buglist]):
+        if not all([self.is_valid_url(url) for url in buglist]):
             raise django.forms.ValidationError(
                 "You have entered an invalid URL: " + url)  # evil
 
@@ -99,8 +107,8 @@ class BugsForm(django.forms.Form):
 
         for url in self.cleaned_data.get('buglist').split("\n"):
             # get_or_create returns a tuple (object b, bool created?)
-            b = mysite.bugsets.models.AnnotatedBug.objects.get_or_create(
-                url=url)[0]
+            b, _ = mysite.bugsets.models.AnnotatedBug.objects.get_or_create(
+                url=url)
 
             try:
                 o = mysite.search.models.Bug.all_bugs.get(
